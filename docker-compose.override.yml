@@ -1,0 +1,16 @@
+version: '3.9'
+
+services:
+  mail-sender:
+    build: '.'
+    environment:
+      DEBUG: 1
+      MAIL_USERNAME: ${MAIL_USERNAME?}
+      MAIL_PASSWORD: ${MAIL_PASSWORD?}
+      MAIL_FROM: ${MAIL_FROM?}
+      MAIL_PORT: ${MAIL_PORT?}
+      MAIL_SERVER: ${MAIL_SERVER?}
+      MAIL_TLS: ${MAIL_TLS?}
+      MAIL_SSL: ${MAIL_SSL?}
+      USE_CREDENTIALS: ${USE_CREDENTIALS?}
+      VALIDATE_CERTS: ${VALIDATE_CERTS?}

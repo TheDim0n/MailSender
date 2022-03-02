@@ -1,0 +1,5 @@
+version: '3.9'
+
+services:
+  mail-sender:
+    image: ghcr.io/thedim0n/mail/sender
