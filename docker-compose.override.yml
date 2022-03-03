@@ -14,3 +14,5 @@ services:
       MAIL_SSL: ${MAIL_SSL?}
       USE_CREDENTIALS: ${USE_CREDENTIALS?}
       VALIDATE_CERTS: ${VALIDATE_CERTS?}
+    ports:
+      - 8000:80

@@ -4,6 +4,7 @@ from pydantic import BaseSettings
 
 class Settings(BaseSettings):
     debug: bool = False
+    root_path: str = ''
 
     mail_username: str
     mail_password: str

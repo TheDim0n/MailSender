@@ -1,4 +1,4 @@
-FROM tiangolo/uvicorn-gunicorn:python3.9-slim
+FROM tiangolo/uvicorn-gunicorn:python3.9-alpine3.14
 
 RUN pip install --upgrade pip
 

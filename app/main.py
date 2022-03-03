@@ -3,6 +3,7 @@ import aiosmtplib
 
 from email.message import EmailMessage
 from fastapi import FastAPI, Response, BackgroundTasks
+from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, EmailStr
 from typing import List
 
@@ -11,7 +12,18 @@ from app.depends import get_settings
 
 settings = get_settings()
 
-app = FastAPI()
+app = FastAPI(root_path=settings.root_path, title="MailSender")
+
+
+# setup middleware
+if settings.debug:
+    app.add_middleware(
+        CORSMiddleware,
+        allow_origins=["*"],
+        allow_credentials=True,
+        allow_methods=["*"],
+        allow_headers=["*"],
+    )
 
 
 class EmailData(BaseModel):
