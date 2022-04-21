@@ -1,8 +1,12 @@
 
 import aiosmtplib
+import os
 
-from email.message import EmailMessage
-from fastapi import FastAPI, Response, BackgroundTasks
+from email.mime.text import MIMEText
+from email.mime.multipart import MIMEMultipart
+from email.mime.application import MIMEApplication
+from fastapi import (Body, FastAPI, File, UploadFile, Response,
+                     BackgroundTasks)
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, EmailStr
 from typing import List
@@ -27,16 +31,32 @@ if settings.debug:
 
 
 class EmailData(BaseModel):
-    recipients: List[EmailStr]
-    subject: str
-    message: str
+    recipients: List[str]
+    subject: str = None
+    message: str = None
 
 
-async def emailing(data: EmailData):
-    message = EmailMessage()
+async def emailing(data: EmailData, attachments: List):
+    message = MIMEMultipart()
     message["from"] = settings.mail_from
     message["Subject"] = data.subject
-    message.set_content(data.message)
+    message.attach(MIMEText(data.message, 'plain'))
+    for attachment in attachments:
+        if isinstance(attachment, str):
+            with open(attachment, 'r') as f:
+                file = f.read()
+            filename = attachment.split(os.path.sep)[-1]
+        else:
+            file = await attachment.read()
+            filename = attachment.filename
+        attachfile = MIMEApplication(
+            file,
+            _subtype=filename.split('.')[-1]
+        )
+        attachfile.add_header(
+            'content-disposition', 'attachment', filename=filename
+        )
+        message.attach(attachfile)
 
     await aiosmtplib.send(
         message,
@@ -50,7 +70,39 @@ async def emailing(data: EmailData):
     )
 
 
-@app.post("/email/", status_code=201)
-async def send_email(data: EmailData, background: BackgroundTasks):
-    background.add_task(emailing, data)
+@app.post("/email", status_code=201)
+async def send_email(
+    background: BackgroundTasks,
+    recipients: List[EmailStr] = Body(...),
+    subject: str = Body(''),
+    message: str = Body(...),
+    attachments: List[UploadFile] = File(None)
+):
+    data = EmailData(
+        recipients=recipients,
+        subject=subject,
+        message=message
+    )
+    if not attachments:
+        attachments = []
+    background.add_task(emailing, data, attachments)
+    return Response(status_code=201)
+
+
+@app.post("/csv", status_code=201)
+async def send_from_csv(
+    background: BackgroundTasks,
+    csv_file: UploadFile
+):
+    lines = csv_file.file.readlines()
+    for line in lines[1:]:
+        data = str(line, "utf-8").split(';')
+        emailData = EmailData(
+            recipients=[data[0].strip()],
+            subject=data[1],
+            message=data[2]
+        )
+        attachments = [data[3].strip()]
+        background.add_task(emailing, emailData, attachments)
+
     return Response(status_code=201)
